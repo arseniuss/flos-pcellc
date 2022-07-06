@@ -1,0 +1,38 @@
+module test1.a
+
+import io.file // test
+
+var C int = 
+5
+
+//var l uint = 1+2*3
+
+var k uint = -1+2*3+
+    (4/5)
+
+type string struct packed { 
+    data uintptr `data
+    len int `len
+}
+
+type rint int
+
+var dec int = 123
+var r int = -1;
+var bin int = 0b0_101;
+var oct int = 0o010_17
+var hex int = 0x45A6_5F
+var text string = "t\est"
+var chr char = 'ā'
+//var flt float = 1.3e+20
+//var flt2 float = 0x1.Fp30
+//var flt3 float = 1e10
+var arr [2]int
+
+// Comment
+
+func main(args []string) string {
+    test %%= 123
+    g.r = "\"\0"
+}
+//
