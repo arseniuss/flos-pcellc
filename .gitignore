@@ -1,0 +1,5 @@
+*.gcov
+/.vscode/
+/bin/
+/build/
+/lib/

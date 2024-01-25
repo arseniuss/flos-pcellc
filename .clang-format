@@ -1,0 +1,14 @@
+AlignConsecutiveMacros: AcrossEmptyLines
+AllowShortEnumsOnASingleLine: false
+BreakBeforeBraces: Attach
+ColumnLimit: 120
+IncludeBlocks: Preserve
+IndentCaseBlocks: true
+IndentCaseLabels: false
+IndentPPDirectives: BeforeHash
+IndentWidth: 4
+InsertBraces: true
+InsertNewlineAtEOF: true
+LineEnding: LF
+TabWidth: 4
+UseTab: Never
