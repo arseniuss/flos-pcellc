@@ -51,14 +51,15 @@ VERSION = $VERSION
 AR = ar
 CC = cc
 COV = gcov
-LD = ld
+LD = cc
 PP = cpp
 PROVE = prove
 
 BASE = ../..
 BUILDDIR = build
 
-CFLAGS = -std=c99 -Wall -Wshadow
+CFLAGS = -std=c99 -Wall -Wshadow -Wextra
+LDFLAGS = -lc
 EOF
 
 if [ "$feature_debug" -eq 1 ]; then

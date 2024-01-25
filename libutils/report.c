@@ -60,7 +60,7 @@ char *vreportf(cell_source_t *src, const cell_pos_t *pos, cell_sev_t sev, const 
 
     safe_vstrmcatf(&ret, fmt, args);
 
-    if (pos && print_location) {
+    if (src && pos && print_location) {
         long curr = src->ftell(src);
         int r = src->fseek(src, pos->start.line_pos);
         char *line = NULL;
@@ -85,7 +85,7 @@ char *vreportf(cell_source_t *src, const cell_pos_t *pos, cell_sev_t sev, const 
             safe_strmcatf(&ret, "%s", line);
 
             safe_strmcatf(&ret, "       | ");
-            for (size_t i = 0; i < line[i]; i++) {
+            for (size_t i = 0; line[i]; i++) {
                 if (i == pos->start.col - 2) {
                     safe_strmcat(&ret, "^");
                 } else if (i > pos->start.col - 2 && i < pos->end.col - 2) {

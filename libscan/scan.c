@@ -497,7 +497,7 @@ char *cell_scanner_consume(cell_scanner_t *scn) {
         }
         break;
     case '/':
-        switch ((ch = peekchar(scn))) {
+        switch (peekchar(scn)) {
         case '/':
             nextchar(scn);
             nextchar(scn);

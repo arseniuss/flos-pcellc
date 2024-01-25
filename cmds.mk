@@ -16,7 +16,7 @@ all: $(CMD)
 
 $(CMD): $(OBJS) $(LIBS)
 	@mkdir -p bin
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(PKGS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(PKGS)
 
 $(OBJS): $(BUILDDIR)/$(SUBDIR)/%.o: $(SUBDIR)/%.c
 	@mkdir -p $(@D)

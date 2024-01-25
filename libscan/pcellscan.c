@@ -44,12 +44,14 @@ static int scan(const char *filename) {
     cell_source_t *src = NULL;
 
     if ((err = cell_source_init_file(filename, &src))) {
+        fprintf(stderr, "%s\n", err);
         goto error0;
     }
 
     cell_scanner_t *scn = NULL;
 
     if ((err = cell_scanner_init(src, &scn))) {
+        fprintf(stderr, "%s\n", err);
         goto error1;
     }
 
