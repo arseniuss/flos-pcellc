@@ -1,0 +1,123 @@
+#!/bin/sh
+
+# when any command fails, the shell immediately exists
+set -e
+
+progname="$0"
+
+#
+# Configuration
+#
+version=0.1
+package=pcellc
+
+setvar() {
+    local name="$1"
+    local defval="$2"
+
+    ! test -z "$(eval echo \$$name)" && eval export $name || eval export $name=\"$defval\"
+}
+
+setechovar() {
+    setvar "$1" "$2"
+    eval echo \"\$$1\"
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --srcdir=*)
+        srcdir="${1#*=}"
+        ;;
+    --prefix=*)
+        prefix="${1#*=}"
+        ;;
+    --exec-prefix=*)
+        exec_prefix="${1#*=}"
+        ;;
+    --bindir=*)
+        bindir="${1#*=}"
+        ;;
+    --sbindir=*)
+        sbindir="${1#*=}"
+        ;;
+    --sysconfdir=*)
+        sysconfdir="${1#*=}"
+        ;;
+    --localstatedir=*)
+        localstatedir="${1#*=}"
+        ;;
+    --runstatedir=*)
+        runstatedir="${1#*=}"
+        ;;
+    --libdir=*)
+        libdir="${1#*=}"
+        ;;
+    --includedir=*)
+        includedir="${1#*=}"
+        ;;
+    --datarootdir=*)
+        datarootdir="${1#*=}"
+        ;;
+    --datadir=*)
+        datadir="${1#*=}"
+        ;;
+    --docdir=*)
+        docdir="${1#*=}"
+        ;;
+    --)
+        shift
+        break
+        ;;
+    *=*)
+        eval $1;
+        ;;
+    --*|-*)
+        printf "%s: illegal option: %s\n" "$progname" "$1"
+        exit 1
+        ;;
+    *)
+        printf "%s: unrecognised argument: %s\n" "$progname" "$1"
+        exit 1
+        ;;
+    esac
+    shift
+done
+
+#
+# Base directories
+#
+setvar srcdir .
+setvar prefix .
+setvar exec_prefix "$prefix"
+setvar datarootdir "$prefix/share"
+
+cat <<EOF > $srcdir/config.mk
+PACKAGE = $package
+VERSION = $version
+
+AR = $(setechovar AR ar)
+CC = $(setechovar CC cc)
+COV = $(setechovar COV gcov)
+LD = $(setechovar LD cc)
+PP = $(setechovar PP cpp)
+PROVE = $(setechovar PROVE prove)
+
+CFLAGS = $(setechovar CFLAGS "-std=c99 -Wall -Wshadow -Wextra -DVERSION=\"$version\"")
+LDFLAGS = $(setechovar LDFLAGS "")
+
+srcdir = $(setechovar srcdir .)
+
+prefix = $prefix
+exec_prefix = $exec_prefix
+
+bindir = $(setechovar bindir "$exec_prefix/bin")
+sbindir = $(setechovar sbindir "$exec_prefix/sbin")
+sysconfdir = $(setechovar sysconfdir "$prefix/etc")
+localstatedir = $(setechovar localstatedir "$prefix/var")
+runstatedir = $(setechovar runstatedir "$prefix/run")
+libdir = $(setechovar libdir "$exec_prefix/lib")
+includedir = $(setechovar includedir "$prefix/include")
+datarootdir = $datarootdir
+datadir = $(setechovar datadir "$datarootdir")
+docdir = $(setechovar docdir "$datarootdir/doc/$package")
+EOF
