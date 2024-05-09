@@ -58,4 +58,5 @@ jobs:
       run: |
         [ -f ./configure ] && ./configure
         make
+      working-directory: src/flos/pcellc
 
