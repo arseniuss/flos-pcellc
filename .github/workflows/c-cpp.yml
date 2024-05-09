@@ -29,6 +29,7 @@ jobs:
       
     - name: Build UTF-8 library
       run: |
+        ./bin/update-UnicodeData.bash # non standard
         [ -f ./configure ] && ./configure
         make
       working-directory: src/flos/libutf8
