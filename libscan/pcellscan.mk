@@ -1,11 +1,14 @@
-CMD = bin/pcellscan
+TARGET = bin/pcellscan
 
 SRCS += \
     libscan/pcellscan.c
 
-CFLAGS += -I$(BASE)/flos/libutils/include
+CFLAGS += \
+	-I$(root)/src/flos/libutils/include
 
 PKGS = \
 	lib/libcell_utils.a \
-    $(BASE)/flos/libutf8/lib/libutf8.a \
-	$(BASE)/flos/libutils/lib/libutils.a
+
+LIBS += \
+    $(root)/src/flos/libutf8/lib/libutf8.a \
+	$(root)/src/flos/libutils/lib/libutils.a

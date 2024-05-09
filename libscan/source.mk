@@ -1,4 +1,4 @@
-LIB = \
+TARGET = \
     lib/libcell_scan.a
 
 HDRS = \
@@ -7,8 +7,11 @@ HDRS = \
 SRCS = \
     libscan/scan.c
 
-CFLAGS += -Iinclude -I$(BASE)/flos/libds/include -I$(BASE)/flos/libutf8/include
+CFLAGS += \
+	-Iinclude \
+	-I$(root)/src/flos/libds/include \
+	-I$(root)/src/flos/libutf8/include
 
 PKGS = \
-    $(BASE)/flos/libutf8/lib/libutf8.a \
-    $(BASE)/flos/libds/lib/libds.a \
+    $(root)/src/flos/libutf8/lib/libutf8.a \
+    $(root)/src/flos/libds/lib/libds.a \

@@ -64,12 +64,9 @@ while [ $# -gt 0 ]; do
     --docdir=*)
         docdir="${1#*=}"
         ;;
-    --)
-        shift
-        break
-        ;;
+
     *=*)
-        eval $1;
+        eval ${1%%=*}=\"${1#*=}\"
         ;;
     --*|-*)
         printf "%s: illegal option: %s\n" "$progname" "$1"
@@ -90,6 +87,13 @@ setvar srcdir .
 setvar prefix .
 setvar exec_prefix "$prefix"
 setvar datarootdir "$prefix/share"
+setvar CFLAGS "-Wall -Wshadow -Wextra"
+setvar LDFLAGS
+setvar LIBS
+
+# Append defaults
+CFLAGS="$CFLAGS -std=c99 -DVERSION=\"$version\""
+LDFLAGS="$LDFLAGS "
 
 cat <<EOF > $srcdir/config.mk
 PACKAGE = $package
@@ -102,10 +106,14 @@ LD = $(setechovar LD cc)
 PP = $(setechovar PP cpp)
 PROVE = $(setechovar PROVE prove)
 
-CFLAGS = $(setechovar CFLAGS "-std=c99 -Wall -Wshadow -Wextra -DVERSION=\"$version\"")
-LDFLAGS = $(setechovar LDFLAGS "")
+CFLAGS = $CFLAGS
+LDFLAGS = $LDFLAGS
+LIBS = $LIBS
+
+root = $(setechovar ROOT /)
 
 srcdir = $(setechovar srcdir .)
+builddir = $(setechovar builddir build)
 
 prefix = $prefix
 exec_prefix = $exec_prefix

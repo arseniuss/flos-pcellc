@@ -1,4 +1,4 @@
-LIB = \
+TARGET = \
     lib/libcell_utils.a
 
 HDRS = \
@@ -9,6 +9,7 @@ SRCS = \
 	libutils/safe.c \
     libutils/source.c
 
-CFLAGS += -Iinclude -I$(BASE)/flos/libutf8/include
+CFLAGS += \
+	-Iinclude \
+	-I$(root)/src/flos/libutf8/include
 
-PKGS =

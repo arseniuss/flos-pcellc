@@ -1,25 +1,17 @@
 #!env make
 .POSIX:
 
-CMDS = \
-	bin/pcellscan
-
-COVERAGE = \
-	libscan \
-	libutils
-
-LIBS = \
+TARGETS = \
+	bin/pcellscan \
 	lib/libcell_scan.a \
 	lib/libcell_utils.a
 
 include config.mk
 
-COVDIRS != echo $(COVERAGE) | sed -e 's/\([a-z]*\)/$(BUILDDIR)\/\1/g'
-
 .SUFFIXES:
-.PHONY: all tests clean coverage $(CMDS) $(LIBS)
+.PHONY: all tests clean coverage $(TARGETS)
 
-all: $(LIBS) $(CMDS)
+all: $(TARGETS)
 
 bin/pcellscan: cmds.mk libscan/pcellscan.mk libscan/source.mk
 	$(MAKE) -f cmds.mk MKFILE=libscan/pcellscan.mk SUBDIR=libscan
@@ -30,12 +22,9 @@ lib/libcell_scan.a: libs.mk libscan/source.mk
 lib/libcell_utils.a: libs.mk libutils/source.mk
 	$(MAKE) -f libs.mk SUBDIR=libutils
 
-coverage: all
-	@ for i in $(COVERAGE); do \
-		if [ -x $$i/coverage.sh ]; then $$i/coverage.sh; fi \
-	done
-	mkdir -p $(BUILDDIR)/coverage
-	gcovr --html-details $(BUILDDIR)/coverage/ $(COVDIRS)
+# TODO: check:
+
+#TODO install:
 
 clean:
-	rm -rf bin lib $(BUILDDIR) pcellc-$(VERSION).tar.gz
+	rm -rf bin lib $(builddir) pcellc-$(VERSION).tar.gz
