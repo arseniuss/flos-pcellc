@@ -48,6 +48,19 @@ jobs:
         make check
       working-directory: src/flos/libds
 
+    - name: Checkout utils library
+      uses: actions/checkout@v4
+      with:
+        repository: arseniuss/flos-libutils
+        path: src/flos/libutils
+
+    - name: Build utils library
+      run: |
+        [ -f ./configure ] && ./configure
+        make
+        make check
+      working-directory: src/flos/libutils
+
     - name: Checkout POSIX cell compiler
       uses: actions/checkout@v4
       with:
