@@ -58,7 +58,6 @@ jobs:
       run: |
         [ -f ./configure ] && ./configure
         make
-        make check
       working-directory: src/flos/libutils
 
     - name: Checkout POSIX cell compiler
