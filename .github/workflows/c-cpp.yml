@@ -12,8 +12,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
+    - name: Only checkout action scripts
+      uses: actions/checkout@v4
+      with:
+        sparse_checkout: |
+          .github
+      
+    # create expected source tree /src/flos/...
+    - name: Checkout UTF-8 library
+      uses: actions/checkout@v4
+      with:
+        repository: arseniuss/flos-libutf8
+        path: src/flos/libutf8
+      
+    - name: Build UTF-8 library
+      run: ./configure && make
+      working-directory: src/flos/libutf8
+
+    - name: Checkout data structures library
+      uses: actions/checkout@v4
+      with:
+        repository: arseniuss/flos-libds
+        path: src/flos/libds
+
+    - name: Checkout POSIX cell compiler
+      uses: actions/checkout@v4
+      with:
+        repository: arseniuss/flos-pcellc
+        path: src/flos/pcellc
+
+    - name: Configure
+      run: ./configure.sh
