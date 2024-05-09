@@ -7,8 +7,8 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
-
+  build-env:
+    name: "Build base environment"
     runs-on: ubuntu-latest
     env:
       ROOT: ${GITHUB_WORKSPACE}
@@ -19,8 +19,7 @@ jobs:
       with:
         sparse-checkout: |
           .github
-      
-    # create expected source tree /src/flos/...
+
     - name: Checkout UTF-8 library
       uses: actions/checkout@v4
       with:
@@ -60,15 +59,23 @@ jobs:
         make
       working-directory: src/flos/libutils
 
-    - name: Checkout POSIX cell compiler
-      uses: actions/checkout@v4
-      with:
-        repository: arseniuss/flos-pcellc
-        path: src/flos/pcellc
+   
+       
+  normal-build:
+    name: "Normal build"
+    runs-on: ubuntu-latest
+    needs: [build-env]
+    steps:
+     - name: Checkout POSIX cell compiler
+       uses: actions/checkout@v4
+       with:
+         repository: arseniuss/flos-pcellc
+         path: src/flos/pcellc
 
-    - name: Build POSIX cell compiler
-      run: |
-        [ -f ./configure ] && ./configure
-        make
-      working-directory: src/flos/pcellc
+     - name: Build POSIX cell compiler
+       run: |
+         [ -f ./configure ] && ./configure
+         make
+       working-directory: src/flos/pcellc
+     
 
