@@ -32,6 +32,7 @@ jobs:
         ./bin/update-UnicodeData.bash # non standard
         [ -f ./configure ] && ./configure
         make
+        make check
       working-directory: src/flos/libutf8
 
     - name: Checkout data structures library
@@ -44,6 +45,7 @@ jobs:
       run: |
         [ -f ./configure ] && ./configure
         make
+        make check
       working-directory: src/flos/libds
 
     - name: Checkout POSIX cell compiler
@@ -51,4 +53,9 @@ jobs:
       with:
         repository: arseniuss/flos-pcellc
         path: src/flos/pcellc
+
+    - name: Build POSIX cell compiler
+      run: |
+        [ -f ./configure ] && ./configure
+        make
 
