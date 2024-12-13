@@ -11,6 +11,12 @@ progname="$0"
 version=0.1
 package=pcellc
 
+local_dep_names="$local_dep_names flos-libutf8-master"
+local_dep_urls="$local_dep_urls https://github.com/arseniuss/flos-libutf8/archive/refs/heads/master.zip"
+
+local_dep_names="$local_dep_names flos-libutils-master"
+local_dep_urls="$local_dep_urls https://github.com/arseniuss/flos-libutils/archive/refs/heads/master.zip"
+
 setvar() {
     local name="$1"
     local defval="$2"
@@ -23,8 +29,65 @@ setechovar() {
     eval echo \"\$$1\"
 }
 
+make_local() {
+    (
+        cd "$1";
+
+        for include in $INCLUDES; do
+            __CFLAGS="$__CFLAGS -I../../$include"
+        done
+
+        if [ ! -f config.mk ]; then
+            ./configure CFLAGS=$__CFLAGS
+        fi
+        make CFLAGS="$__CFLAGS -Iinclude"
+    )
+}
+
+setup_local() {
+    NAME_COUNT=$(echo "$local_dep_names" | wc -w)
+    URL_COUNT=$(echo "$local_dep_urls" | wc -w)
+
+    if [ $NAME_COUNT != $URL_COUNT ]; then
+        echo "error: incorrect dependency list" > /dev/stderr
+        exit 1
+    fi
+
+    mkdir -p deps
+
+    i=1
+    while [ "$i" -le $NAME_COUNT ]; do
+        name=$(echo $local_dep_names | cut -d\  -f$i)
+        url=$(echo $local_dep_urls | cut -d\  -f$i)
+
+        if [ ! -f deps/$filename ]; then
+            echo "Dowloading $name ..."
+
+            wget -nc $url -P deps -O deps/$name.zip || true
+        fi
+
+        if [ ! -d deps/$name/ ]; then
+            echo "Unzipping $name ..."
+
+            mkdir -p deps/$name/
+            unzip -q deps/$name.zip -d deps
+        fi
+
+        make_local "deps/$name/"
+
+        if [ -d deps/$name/include ]; then
+            INCLUDES="$INCLUDES deps/$name/include"
+        fi
+        
+        i=$(( i + 1 ))
+    done
+}
+
 while [ $# -gt 0 ]; do
     case "$1" in
+    --local)
+        do_local_setup=1
+        ;;
     --srcdir=*)
         srcdir="${1#*=}"
         ;;
@@ -90,10 +153,15 @@ setvar datarootdir "$prefix/share"
 setvar CFLAGS "-Wall -Wshadow -Wextra"
 setvar LDFLAGS
 setvar LIBS
+setvar INCLUDES
 
 # Append defaults
 CFLAGS="$CFLAGS -std=c99 -DVERSION=\"$version\""
 LDFLAGS="$LDFLAGS "
+
+if [ "$do_local_setup" -eq 1 ]; then
+    setup_local
+fi
 
 cat <<EOF > $srcdir/config.mk
 PACKAGE = $package
