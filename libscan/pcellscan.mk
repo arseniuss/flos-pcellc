@@ -4,11 +4,11 @@ SRCS += \
     libscan/pcellscan.c
 
 CFLAGS += \
-	-I$(root)/src/flos/libutils/include
+	-I$(libutils_INCLUDE)
 
 PKGS = \
 	lib/libcell_utils.a \
 
 LIBS += \
-    $(root)/src/flos/libutf8/lib/libutf8.a \
+    $(libutf8_LIB)/libutf8.a \
 	$(root)/src/flos/libutils/lib/libutils.a

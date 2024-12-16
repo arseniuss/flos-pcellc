@@ -11,5 +11,5 @@ SRCS = \
 
 CFLAGS += \
 	-Iinclude \
-	-I$(root)/src/flos/libutf8/include
+	-I$(libutf8_INCLUDE)
 

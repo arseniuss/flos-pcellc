@@ -5,17 +5,7 @@ set -e
 
 progname="$0"
 
-#
-# Configuration
-#
-version=0.1
-package=pcellc
-
-local_dep_names="$local_dep_names flos-libutf8-master"
-local_dep_urls="$local_dep_urls https://github.com/arseniuss/flos-libutf8/archive/refs/heads/master.zip"
-
-local_dep_names="$local_dep_names flos-libutils-master"
-local_dep_urls="$local_dep_urls https://github.com/arseniuss/flos-libutils/archive/refs/heads/master.zip"
+. ./config.inc
 
 setvar() {
     local name="$1"
@@ -33,54 +23,80 @@ make_local() {
     (
         cd "$1";
 
-        for include in $INCLUDES; do
-            __CFLAGS="$__CFLAGS -I../../$include"
-        done
-
         if [ ! -f config.mk ]; then
-            ./configure CFLAGS=$__CFLAGS
+            ./configure
         fi
-        make CFLAGS="$__CFLAGS -Iinclude"
+        make
     )
 }
 
 setup_local() {
-    NAME_COUNT=$(echo "$local_dep_names" | wc -w)
-    URL_COUNT=$(echo "$local_dep_urls" | wc -w)
-
-    if [ $NAME_COUNT != $URL_COUNT ]; then
-        echo "error: incorrect dependency list" > /dev/stderr
-        exit 1
-    fi
+    DEPLIBS_COUNT=$(echo "$DEPLIBS" | wc -w)
 
     mkdir -p deps
 
-    i=1
-    while [ "$i" -le $NAME_COUNT ]; do
-        name=$(echo $local_dep_names | cut -d\  -f$i)
-        url=$(echo $local_dep_urls | cut -d\  -f$i)
+    i=0
+    while [ "$i" -lt $DEPLIBS_COUNT ]; do
+        i=$(( i + 1 ))
 
-        if [ ! -f deps/$filename ]; then
-            echo "Dowloading $name ..."
+        name=$(echo "$DEPLIBS" | cut -d\  -f$i)
+        echo "Setting dependency library $name ..."
 
-            wget -nc $url -P deps -O deps/$name.zip || true
+        url=$(eval echo \"\$${name}_URL\")
+        if [ -z "$url" ]; then
+            echo "error: URL is not set for library $name" > /dev/stderr
+            continue
         fi
 
-        if [ ! -d deps/$name/ ]; then
+        dir=$(eval echo \"\$${name}_DIR\")
+        if [ -z "$dir" ]; then
+            echo "error: archive directory is not set for library $name" > /dev/stderr
+            continue
+        fi
+
+        if [ ! -f deps/$name.zip ]; then
+            echo "Downloading $name.zip ..."
+
+            wget -nc "$url" -P deps -O deps/$name.zip || true
+        fi
+
+        if [ ! -d deps/$dir/ ]; then
             echo "Unzipping $name ..."
 
-            mkdir -p deps/$name/
+            mkdir deps/$dir/
             unzip -q deps/$name.zip -d deps
         fi
 
-        make_local "deps/$name/"
+        make_local "deps/$dir/"
 
-        if [ -d deps/$name/include ]; then
-            INCLUDES="$INCLUDES deps/$name/include"
+        if [ -d deps/$dir/include ]; then
+            INCLUDES="$INCLUDES deps/$dir/include"
         fi
-        
-        i=$(( i + 1 ))
     done
+}
+
+include_local() {
+    local config_file="$1"
+
+    DEPLIBS_COUNT=$(echo "$DEPLIBS" | wc -w)
+
+    i=0
+    while [ "$i" -lt $DEPLIBS_COUNT ]; do
+        i=$(( i + 1 ))
+
+        name=$(echo "$DEPLIBS" | cut -d\  -f$i)
+        dir=$(eval echo \"\$${name}_DIR\")
+
+        [ -z "$dir" ] && continue;
+
+        if [ -d deps/$dir/include ]; then
+            echo "${name}_INCLUDE=deps/$dir/include" >> $config_file
+        fi
+
+        if [ -d deps/$dir/lib ]; then
+            echo "${name}_LIB=deps/$dir/lib" >> $config_file
+        fi
+    done  
 }
 
 while [ $# -gt 0 ]; do
@@ -177,6 +193,14 @@ PROVE = $(setechovar PROVE prove)
 CFLAGS = $CFLAGS
 LDFLAGS = $LDFLAGS
 LIBS = $LIBS
+
+EOF
+
+if [ "$do_local_setup" -eq 1 ]; then
+    include_local "$srcdir/config.mk"
+fi
+
+cat<<EOF >> $srcdir/config.mk
 
 root = $(setechovar ROOT /)
 

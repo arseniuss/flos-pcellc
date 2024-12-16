@@ -10,8 +10,8 @@ SRCS = \
 CFLAGS += \
 	-Iinclude \
 	-I$(root)/src/flos/libds/include \
-	-I$(root)/src/flos/libutf8/include
+	-I$(libutf8_INCLUDE)
 
 PKGS = \
-    $(root)/src/flos/libutf8/lib/libutf8.a \
+    $(libutf8_LIB)/libutf8.a \
     $(root)/src/flos/libds/lib/libds.a \
