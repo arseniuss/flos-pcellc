@@ -11,4 +11,4 @@ PKGS = \
 
 LIBS += \
     $(libutf8_LIB)/libutf8.a \
-	$(root)/src/flos/libutils/lib/libutils.a
+	$(libutils_LIB)/libutils.a

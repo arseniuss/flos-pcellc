@@ -27,4 +27,4 @@ lib/libcell_utils.a: libs.mk libutils/source.mk
 #TODO install:
 
 clean:
-	rm -rf bin lib $(builddir) pcellc-$(VERSION).tar.gz
+	rm -rf bin deps lib $(builddir) pcellc-$(VERSION).tar.gz
