@@ -8,11 +8,10 @@ progdir=$(dirname "$0")
 
 alias echo=$(which echo)
 
-. ./package.cfg
-
 do_local_setup=0
 on_exit_cmd=""
 
+WITH_DEPLIBS=""
 VARS=""
 
 trap 'excode=$?; if [ $excode != 0 ]; then rm -vf config.mk; fi' EXIT INT HUP
@@ -83,26 +82,58 @@ check_program() {
         error "not found"
 }
 
-make_local() {
-    local name="$1"
-    local location="$2"
-    local includes="$3"
-    local libs="$4"
-
-    (
-        cd "$location";
-
-        if [ ! -f config.mk ]; then
-            echo "Configuring $name ..."
-            ./configure $includes $libs || rm -f config.mk
-        fi
-        make
-    )
-}
-
 setup_vars() {
     for var in $VARS; do
         echo $var
+    done
+}
+
+collect_local() {
+    DEPLIBS_COUNT=$(echo "$DEPLIBS" | wc -w)
+
+    mkdir -p deps
+
+    i=0
+    while [ "$i" -lt $DEPLIBS_COUNT ]; do
+        i=$(( i + 1 ))
+        changed=0
+
+        name=$(echo "$DEPLIBS" | cut -d\  -f$i)
+        checking "dependency library $name"
+
+        url=$(eval echo \"\$${name}_URL\")
+        if [ -z "$url" ]; then
+            echo "error: URL is not set for library $name" 1>&2
+            continue
+        fi
+
+        dir=$(eval echo \"\$${name}_DIR\")
+        if [ -z "$dir" ]; then
+            echo "error: archive directory is not set for library $name" 1>&2
+            continue
+        fi
+
+        if [ ! -f deps/$name.zip ]; then
+            echo 1>&2
+            echo "Downloading $name.zip ..." 1>&2
+
+            wget -nc "$url" -P deps -O deps/$name.zip 2>&1 | prefix "[$name wget]" || true
+            changed=1
+        fi
+
+        if [ ! -d deps/$dir/ ]; then
+            echo "Unzipping $name ..." 1>&2
+
+            mkdir deps/$dir/
+            unzip -q deps/$name.zip -d deps 2>&1 | prefix "[$name unzip]"
+            changed=1
+        fi
+
+        if [ $changed -eq 0 ]; then
+            ok
+        fi
+
+        WITH_DEPLIBS="$WITH_DEPLIBS --with-$name=../$dir/"
     done
 }
 
@@ -118,42 +149,19 @@ setup_local() {
         i=$(( i + 1 ))
 
         name=$(echo "$DEPLIBS" | cut -d\  -f$i)
-        echo "Setting dependency library $name ..."
+        echo "Making dependency library $name ..." 1>&2
 
         url=$(eval echo \"\$${name}_URL\")
-        if [ -z "$url" ]; then
-            echo "error: URL is not set for library $name" > /dev/stderr
-            continue
-        fi
-
         dir=$(eval echo \"\$${name}_DIR\")
-        if [ -z "$dir" ]; then
-            echo "error: archive directory is not set for library $name" > /dev/stderr
-            continue
-        fi
 
-        if [ ! -f deps/$name.zip ]; then
-            echo "Downloading $name.zip ..."
+        oldpath=$(pwd)
+        cd "deps/$dir";
 
-            wget -nc "$url" -P deps -O deps/$name.zip 2>&1 | prefix "[$name wget]" || true
-        fi
+        ./configure ${WITH_DEPLIBS} 2>&1 | prefix "[$name configure]" 
 
-        if [ ! -d deps/$dir/ ]; then
-            echo "Unzipping $name ..."
+        make 2>&1 | prefix "[$name make]" 
 
-            mkdir deps/$dir/
-            unzip -q deps/$name.zip -d deps 2>&1 | prefix "[$name unzip]"
-        fi
-
-        make_local "$name" "deps/$dir/" "$includes" "$libs" | prefix "[$name make]"
-
-        if [ -d deps/$dir/include ]; then
-            includes="$includes ${name}_INCLUDE=../$dir/include"
-        fi
-
-        if [ -d deps/$dir/lib ]; then
-            libs="$libs ${name}_LIB=../$dir/lib"
-        fi
+        cd $oldpath
     done
 }
 
@@ -251,9 +259,11 @@ while [ $# -gt 0 ]; do
         docdir="${1#*=}"
         ;;
     --with-*=*)
-        with=${1%=*}
-        with=${with#--with-}
-        eval with_$with="${1#*=}"
+        library=${1%=*}
+        library=${library#--with-}
+        dir=${1#*=}
+        eval with_$library=\"$dir\"
+        echo Provided $library at location $dir 1>&2
         ;;
     --*|-*)
         printf "%s: illegal option: %s\n" "$progname" "$1"
@@ -269,6 +279,8 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
+
+. ./package.cfg
 
 #
 # Base directories
@@ -298,6 +310,7 @@ CFLAGS="$CFLAGS -std=c99 -DVERSION=\"$version\""
 LDFLAGS="$LDFLAGS "
 
 if [ "$do_local_setup" -eq 1 ]; then
+    collect_local
     setup_local
 fi
 
