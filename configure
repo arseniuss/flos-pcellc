@@ -77,7 +77,7 @@ check_program() {
 
     echo -n "$var = "
 
-    which -s $name && ok $name && \
+    which $name > /dev/null && ok $name && \
         setechovar "$var" "$name" || \
         error "not found"
 }
