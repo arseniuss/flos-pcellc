@@ -47,11 +47,15 @@ prefix() {
 	done
 }
 
-checking() {
+msg() {
+    echo -n "$1 ... " 1>&2
+}
+
+check_msg() {
     echo -n "Checking $1 ... " 1>&2
 }
 
-ok() {
+check_result() {
     local text="$1"
 
     if [ ! -z "$text" ]; then
@@ -61,7 +65,7 @@ ok() {
     fi
 }
 
-error() {
+check_error() {
     echo failed 1>&2
     if [ ! -z "$1" ]; then
         echo "error: $1" 1>&2
@@ -73,13 +77,13 @@ check_program() {
     local var="$1"
     local name="$2"
 
-    checking "for $name"
+    check_msg "for $name"
 
     echo -n "$var = "
 
-    which $name > /dev/null && ok $name && \
+    which $name > /dev/null && check_result $name && \
         setechovar "$var" "$name" || \
-        error "not found"
+        check_error "not found"
 }
 
 setup_vars() {
@@ -99,16 +103,16 @@ collect_local() {
         changed=0
 
         name=$(echo "$DEPLIBS" | cut -d\  -f$i)
-        checking "dependency library $name"
+        check_msg "dependency library $name"
 
         url=$(eval echo \"\$${name}_URL\")
         if [ -z "$url" ]; then
-            error "URL is not set for library $name"
+            check_error "URL is not set for library $name"
         fi
 
         dir=$(eval echo \"\$${name}_DIR\")
         if [ -z "$dir" ]; then
-            error "archive directory is not set for library $name"
+            check_error "archive directory is not set for library $name"
         fi
 
         if [ ! -f deps/$name.zip ]; then
@@ -128,7 +132,7 @@ collect_local() {
         fi
 
         if [ $changed -eq 0 ]; then
-            ok
+            check_result
         fi
 
         WITH_DEPLIBS="$WITH_DEPLIBS --with-$name=../$dir"
@@ -176,7 +180,7 @@ setup_deps() {
 
         name=$(echo "$DEPLIBS" | cut -d\  -f$i)
 
-        checking "dependency $name"
+        msg "Setting dependency $name"
 
         if [ "$do_local_setup" -eq 1 ]; then
             dir=$(eval echo \"\$${name}_DIR\")
@@ -203,19 +207,29 @@ setup_deps() {
                 fi
 
                 if [ ! -f $base/lib/$name.a ]; then
-                    error "library $base/lib/$name.a do not exist"
+                    check_error "library $base/lib/$name.a do not exist"
                 fi
             else
-                error "location of dependency $name is not provided --with-$name=DIR"
+                check_error "location of dependency $name is not provided --with-$name=DIR"
             fi
         fi
 
-        ok
+        check_result
     done  
 }
 
+help() {
+    echo "Usage: $progname [OPTIONS] [VAR=VALUE] ..."
+}
+
+. ./package.cfg
+
 while [ $# -gt 0 ]; do
     case "$1" in
+    -h|--help)
+        help
+        exit 0
+        ;;
     --local)
         do_local_setup=1
         ;;
@@ -259,40 +273,54 @@ while [ $# -gt 0 ]; do
         docdir="${1#*=}"
         ;;
     --with-*=*)
-        library=${1%=*}
-        library=${library#--with-}
-        dir=${1#*=}
-        # TODO: is expected
-        eval with_$library=\"$dir\"
-        echo Provided $library at location $dir 1>&2
+        feature=${1%=*}
+        feature=${feature#--with-}
+        value=${1#*=}
+        
+        eval with_$feature=\"$value\"
+
+        if [ "${DEPLIBS#*"$feature"}" = "$DEPLIBS" ]; then
+            printf "%s: illegal option: %s\n" "$progname" "$1" 1>&2
+            echo -ne "\nRecognised options:\n" 1>&2
+            for i in $DEPLIBS; do
+                printf "\t--with-$i=DIR\tlocation of $i library\n"
+            done
+            exit 1
+        fi
+        ;;
+    --with-*)
+            printf "%s: illegal option: %s\n" "$progname" "$1" 1>&2
+            echo -ne "\nRecognised options:\n" 1>&2
+            for i in $DEPLIBS; do
+                printf "\t--with-$i=DIR\tlocation of $i library\n"
+            done
+            exit 1
         ;;
     --*|-*)
-        printf "%s: illegal option: %s\n" "$progname" "$1"
+        printf "%s: illegal option: %s\n" "$progname" "$1" 1>&2
         exit 1
         ;;
     *=*)
         eval ${1%%=*}=\"${1#*=}\"
         ;;
     *)
-        printf "%s: unrecognised argument: %s\n" "$progname" "$1"
+        printf "%s: unrecognised argument: %s\n" "$progname" "$1" 1>&2
         exit 1
         ;;
     esac
     shift
 done
 
-. ./package.cfg
-
 #
 # Base directories
 #
-checking architecture
+check_msg architecture
 test -z "$ARCH" && ARCH=$(uname -m)
-ok $ARCH
+check_result $ARCH
 
-checking "operating system"
+check_msg "operating system"
 test -z "$OS" && OS=$(uname -o)
-ok $OS
+check_result $OS
 
 setvar srcdir .
 setvar prefix .
@@ -309,21 +337,6 @@ setvar INCLUDES
 # Append defaults
 CFLAGS="$CFLAGS -std=c99 -DVERSION=\"$version\""
 LDFLAGS="$LDFLAGS "
-
-if [ "$do_local_setup" -eq 1 ]; then
-    collect_local
-    setup_local
-fi
-
-if [ -x config.cfg ]; then
-    . setup.cfg
-fi
-
-if [ -d configure.d ] && [ -f configure.d/*.cfg.sh ]; then
-    for i in configure.d/*.cfg.sh; do
-        . $i 2>&1 | prefix "[$i]"
-    done
-fi
 
 cat <<EOF > $srcdir/config.mk
 #
@@ -345,6 +358,21 @@ EOF
     check_program PROVE prove
 } >> $srcdir/config.mk
 
+if [ "$do_local_setup" -eq 1 ]; then
+    collect_local
+    setup_local
+fi
+
+if [ -x config.cfg ]; then
+    . setup.cfg
+fi
+
+if [ -d configure.d ] && [ -f configure.d/*.cfg.sh ]; then
+    for i in configure.d/*.cfg.sh; do
+        . $i 2>&1 | prefix "[$i]"
+    done
+fi
+
 cat <<EOF >> $srcdir/config.mk
 CFLAGS = $CFLAGS
 LDFLAGS = $LDFLAGS
@@ -353,7 +381,6 @@ LIBS = $LIBS
 EOF
 
 setup_deps "$srcdir/config.mk"
-
 setup_vars "$VARS" >> $srcdir/config.mk
 
 cat<<EOF >> $srcdir/config.mk
