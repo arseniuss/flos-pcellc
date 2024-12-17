@@ -20,7 +20,7 @@ setvar() {
     local name="$1"
     local defval="$2"
 
-    ! test -z "$(eval echo \$$name)" && eval export $name || eval export $name=\"$defval\"
+    ! test -z "$(eval echo \$$name)" || eval "$name=\"$defval\""
 }
 
 addvar() {
@@ -103,14 +103,12 @@ collect_local() {
 
         url=$(eval echo \"\$${name}_URL\")
         if [ -z "$url" ]; then
-            echo "error: URL is not set for library $name" 1>&2
-            continue
+            error "URL is not set for library $name"
         fi
 
         dir=$(eval echo \"\$${name}_DIR\")
         if [ -z "$dir" ]; then
-            echo "error: archive directory is not set for library $name" 1>&2
-            continue
+            error "archive directory is not set for library $name"
         fi
 
         if [ ! -f deps/$name.zip ]; then
@@ -133,7 +131,7 @@ collect_local() {
             ok
         fi
 
-        WITH_DEPLIBS="$WITH_DEPLIBS --with-$name=../$dir/"
+        WITH_DEPLIBS="$WITH_DEPLIBS --with-$name=../$dir"
     done
 }
 
@@ -157,7 +155,9 @@ setup_local() {
         oldpath=$(pwd)
         cd "deps/$dir";
 
-        ./configure ${WITH_DEPLIBS} 2>&1 | prefix "[$name configure]" 
+        if [ ! -f ./config.mk ]; then
+            ./configure ${WITH_DEPLIBS} 2>&1 | prefix "[$name configure]"
+        fi
 
         make 2>&1 | prefix "[$name make]" 
 
@@ -262,6 +262,7 @@ while [ $# -gt 0 ]; do
         library=${1%=*}
         library=${library#--with-}
         dir=${1#*=}
+        # TODO: is expected
         eval with_$library=\"$dir\"
         echo Provided $library at location $dir 1>&2
         ;;

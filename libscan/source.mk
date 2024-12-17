@@ -9,9 +9,9 @@ SRCS = \
 
 CFLAGS += \
 	-Iinclude \
-	-I$(root)/src/flos/libds/include \
+	-I$(libds_INCLUDE) \
 	-I$(libutf8_INCLUDE)
 
 PKGS = \
     $(libutf8_LIB)/libutf8.a \
-    $(root)/src/flos/libds/lib/libds.a \
+    $(libds_LIB)/libds.a \
