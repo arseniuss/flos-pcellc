@@ -28,3 +28,6 @@ lib/libcell_utils.a: libs.mk libutils/source.mk
 
 clean:
 	rm -rf bin deps lib $(builddir) pcellc-$(VERSION).tar.gz
+
+distclean:
+	rm -rf config.mk
